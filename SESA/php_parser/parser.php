@@ -8,5 +8,5 @@ function parser($filename,$dirname)
     $fp=fopen($dirname.'/'.$newfilename,'w+');
     fwrite($fp,$ast_json);
     fclose($fp);
-    }
+}
 ?>

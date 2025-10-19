@@ -1,7 +1,8 @@
 <?php
 require './function.php';
 require './parser.php';
-$dirname=makedir('json');
-// echo $dirname;
-parser('./text/pikachu/index.php',$dirname);
+$temp='./test/pikachu';
+listfile($temp);
+// $dirname=makedir('json');
+// parser('./test/pikachu/index.php',$dirname);
 ?>
