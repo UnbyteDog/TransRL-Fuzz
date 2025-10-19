@@ -1,5 +1,6 @@
 <?php
 date_default_timezone_set('Asia/Shanghai');
+//创建目录
 function makedir($type){
     $currentdate=date('YmdHis');
     $folderpath=null;
@@ -19,4 +20,13 @@ function makedir($type){
     }
     return $folderpath;
 }
+
+//遍历目录
+function listfile($dirname){
+    $temp=scandir($dirname);
+    print_r($temp);
+}
+
+$temp='./test/pikachu';
+listfile($temp);
 ?>
