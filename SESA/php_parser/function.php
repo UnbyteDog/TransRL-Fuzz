@@ -1,5 +1,5 @@
 <?php
-date_default_timezone_set('Asia/Shanghai');
+//先不用了
 //创建目录
 function makedir($type,$projectname){
     // $currentdate=date('YmdHis');
@@ -21,12 +21,26 @@ function makedir($type,$projectname){
     return $folderpath;
 }
 
-//遍历目录
-function listfile($dirname){
-    $temp=scandir($dirname);
-    print_r($temp);
+
+function findphp($project){
+    $temp_filename=scandir($project);
+    $phpfile=array();
+    foreach($temp_filename as $value){
+        $full_filename=$project.'/'.$value;
+        if(is_dir($full_filename)&&$value!=='.'&&$value!=='..'){
+            $subFiles = findphp($full_filename);
+            foreach ($subFiles as $file) {
+                $phpfile[] = $file;
+            }
+        }
+        elseif(pathinfo($full_filename,PATHINFO_EXTENSION)==="php"){
+            $phpfile[]=$full_filename;
+        }
+    }
+    return $phpfile;
 }
 
 $temp='./test/pikachu';
-listfile($temp);
+$ppp = findphp($temp);
+print_r($ppp);
 ?>
