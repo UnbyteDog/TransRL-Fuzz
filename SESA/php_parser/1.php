@@ -1,6 +1,10 @@
 <?php
 // $filename='./test/pikachu/index.php';
 // $dirname='./json/pikachu';
+if (count($argv) < 3) {
+    echo json_encode(['status' => 'error', 'message' => '参数不足。请提供文件名和目录路径。']);
+    exit(1);
+}
 $filename=$argv[1];
 $dirname=$argv[2];
 $path_info=pathinfo($filename);
@@ -14,6 +18,6 @@ fclose($fp);
 $response = [
     'status' => 'success',
     'received_params' => [$filename, $dirname],
-    'message' => '111111111111111111111111111'
+    'message' => 'phpppppp'
 ];
 ?>
