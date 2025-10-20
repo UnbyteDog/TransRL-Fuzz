@@ -1,11 +1,11 @@
 <?php
 date_default_timezone_set('Asia/Shanghai');
 //创建目录
-function makedir($type){
-    $currentdate=date('YmdHis');
+function makedir($type,$projectname){
+    // $currentdate=date('YmdHis');
     $folderpath=null;
     if($type=="json"){
-        $folderpath="./json/".$currentdate;
+        $folderpath="./json/".$projectname;
         if(!is_dir($folderpath)){
             if(mkdir($folderpath,0777,true)){
                 echo "创建json文件夹:{$folderpath}\n";
