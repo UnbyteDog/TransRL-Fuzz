@@ -3,6 +3,6 @@ require './function.php';
 require './parser.php';
 $temp='./test/pikachu';
 listfile($temp);
-// $dirname=makedir('json');
-// parser('./test/pikachu/index.php',$dirname);
+$dirname=makedir('json','pikachu');
+parser('./test/pikachu/index.php',$dirname);
 ?>
