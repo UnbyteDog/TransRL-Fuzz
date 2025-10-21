@@ -19,8 +19,6 @@ function parser_php($filename,$dirname)
 
 // $filename = './SESA/php_parser/test/pikachu/index.php';
 // $dirname = './SESA/php_parser/json/pikachu';
-// $filename='C:/Users/NNuuNN/Documents/TransRL-Fuzz/SESA/php_parser/test/pikachu/index.php';
-// $dirname='C:/Users/NNuuNN/Documents/TransRL-Fuzz/SESA/php_parser/json/pikachu';
 $filename=$argv[1];
 $dirname=$argv[2];
 parser_php($filename,$dirname);
