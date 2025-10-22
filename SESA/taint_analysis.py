@@ -38,6 +38,7 @@ class TaintAnalysis:
             self.input_variable = input_variable
             self.output_variable = output_variable
 
+
     class PropagationPath:
         '''
         传播路径：污染源，汇聚点，（路径节点，净化节点）
@@ -47,8 +48,14 @@ class TaintAnalysis:
             self.sink = sink
             self.path_note = path_note or []
             self.sanitizer_note = sanitizer_note or []
-        #先不要变量交换记录和上下文信息
-        
+
+            #先不要变量交换记录和上下文信息
+            self.variable_trans = [] #or variable_transformations
+            self.is_sanitized = self._check_sanitization
+            self.confidence_level = self._calculate_confidence
+            self.risk_score = self._calculate_risk_score
+            self.vulnerability_type = self._classify_vulnerability
+
         def _check_sanitization(self):
             '''
             检查净化是否充分
@@ -96,3 +103,23 @@ class TaintAnalysis:
             路径绘制
             '''
             pass
+
+    class PathNote:
+        '''
+        传播路径上的单个节点
+        '''
+        def __init__(self,node_type,variable_name,file_path,line_no,operation_type,parent_node=None,children_node=None):
+            self.node_type = node_type
+            self.variable_name = variable_name
+            self.file_path = file_path
+            self.line_noo = line_no
+            self.operation_type = operation_type
+            self.parent_node = parent_node
+            self.childern_node = children_node or []
+
+            self.data_dependencies = []
+            self.taint_status = "" #污点状态：tainted, sanitized, unknown
+        
+        def add_child(self,child_node):
+            child_node.parent_node = self
+            self.childern_node.append(child_node)
