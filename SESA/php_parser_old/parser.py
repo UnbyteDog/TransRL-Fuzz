@@ -6,14 +6,14 @@ from pathlib import Path
 
 def parser_php(filename,dirname):
     try:
-        base_dir = "./SESA/php_parser/test"  #基础目录
+        base_dir = "./SESA/test"  #基础目录
         relative_path = os.path.relpath(filename, base_dir)
         # 创建目录结构
         output_dir = os.path.join(dirname, os.path.dirname(relative_path))
         os.makedirs(output_dir, exist_ok=True)
 
         # cmd = ['php','./SESA/php_parser/parser.php',filename,dirname]
-        cmd = ['php','./SESA/php_parser/parser.php',filename,output_dir]
+        cmd = ['php','./SESA/php_parser_old/parser.php',filename,output_dir]
         # cmd = ['php','./SESA/php_parser/1.php',filename,dirname]
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
     except subprocess.CalledProcessError as e:

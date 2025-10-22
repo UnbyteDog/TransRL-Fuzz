@@ -1,9 +1,9 @@
 import os
-import php_parser.parser as parser
+import parser as parser
 
 def main():
-    json_dirname = './SESA/php_parser/json/'
-    dirname = "./SESA/php_parser/test/pikachu/"
+    json_dirname = './SESA/php_parser_old/json/'
+    dirname = "./SESA/test/pikachu/"
     project_name = os.path.basename(os.path.normpath(dirname))
     json_project = os.path.join(json_dirname,project_name)
 
