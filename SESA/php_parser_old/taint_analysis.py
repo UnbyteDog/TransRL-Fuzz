@@ -49,7 +49,7 @@ class TaintAnalysis:
             self.path_note = path_note or []
             self.sanitizer_note = sanitizer_note or []
 
-            #先不要变量交换记录和上下文信息
+            #先不进行变量交换记录和上下文信息
             self.variable_trans = [] #or variable_transformations
             self.is_sanitized = self._check_sanitization
             self.confidence_level = self._calculate_confidence
