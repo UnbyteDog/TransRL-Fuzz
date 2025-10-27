@@ -1,8 +1,4 @@
-import json
-import subprocess
 import os
-import sys
-
 
 def parser_php(dirname):
     if not os.path.exists(dirname):
