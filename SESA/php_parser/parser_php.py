@@ -20,7 +20,7 @@ def parser_php(dirname):
         }
 
     cmd = ['php',progpilot_path,dirname]
-    pro = os.system("php "+progpilot_path+' '+dirname+' >> ./SESA/json/'+ os.path.basename(dirname) +'.json')
+    pro = os.system("php "+progpilot_path+' --configuration ./SESA/php_parser/configuration.yml '+dirname+' >> ./SESA/json/'+ os.path.basename(dirname) +'.json')
 
 
 def main():
