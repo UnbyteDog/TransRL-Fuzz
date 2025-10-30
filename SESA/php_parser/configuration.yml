@@ -1,0 +1,188 @@
+## Progpilot 配置文件（已重生成）
+## 说明：包含 taint 源/汇/清理器/验证器，输出配置，以及分析行为选项。
+## 根据项目需求调整：max_file_analysis_duration、max_definitions、max_file_size、source_code_context 等。
+
+# taint:
+#   sources:
+#     - name: "_GET"
+#       type: "superglobal"
+#     - name: "_POST"
+#       type: "superglobal"
+#     - name: "_REQUEST"
+#       type: "superglobal"
+#     - name: "_COOKIE"
+#       type: "superglobal"
+#     - name: "_FILES"
+#       type: "superglobal"
+#     - name: "getenv"
+#       type: "function"
+#     - name: "apache_request_headers"
+#       type: "function"
+#     - name: "file_get_contents"
+#       type: "function"
+#     - name: "fopen"
+#       type: "function"
+#     - name: "stream_get_contents"
+#       type: "function"
+#     - name: "socket_read"
+#       type: "function"
+#     - name: "pg_fetch_result"
+#       type: "function"
+#     - name: "fgets"
+#       type: "function"
+
+#   sinks:
+#     # SQL
+#     - name: "mysqli_query"
+#       type: "function"
+#       category: "sql"
+#     - name: "mysql_query"
+#       type: "function"
+#       category: "sql"
+#     - name: "pg_query"
+#       type: "function"
+#       category: "sql"
+#     - name: "PDO::query"
+#       type: "method"
+#       category: "sql"
+#     - name: "PDO::exec"
+#       type: "method"
+#       category: "sql"
+
+#     # XSS / 输出
+#     - name: "echo"
+#       type: "construct"
+#       category: "xss"
+#     - name: "print"
+#       type: "construct"
+#       category: "xss"
+#     - name: "printf"
+#       type: "function"
+#       category: "xss"
+#     - name: "print_r"
+#       type: "function"
+#       category: "xss"
+#     - name: "var_dump"
+#       type: "function"
+#       category: "xss"
+
+#     # 命令执行
+#     - name: "exec"
+#       type: "function"
+#       category: "command"
+#     - name: "system"
+#       type: "function"
+#       category: "command"
+#     - name: "passthru"
+#       type: "function"
+#       category: "command"
+#     - name: "shell_exec"
+#       type: "function"
+#       category: "command"
+#     - name: "popen"
+#       type: "function"
+#       category: "command"
+#     - name: "proc_open"
+#       type: "function"
+#       category: "command"
+
+#     # eval-like
+#     - name: "eval"
+#       type: "function"
+#       category: "eval"
+#     - name: "create_function"
+#       type: "function"
+#       category: "eval"
+#     - name: "assert"
+#       type: "function"
+#       category: "eval"
+
+#     # 文件包含
+#     - name: "include"
+#       type: "construct"
+#       category: "file_include"
+#     - name: "require"
+#       type: "construct"
+#       category: "file_include"
+#     - name: "include_once"
+#       type: "construct"
+#       category: "file_include"
+#     - name: "require_once"
+#       type: "construct"
+#       category: "file_include"
+
+#     # 文件写入
+#     - name: "file_put_contents"
+#       type: "function"
+#       category: "file_write"
+#     - name: "fwrite"
+#       type: "function"
+#       category: "file_write"
+
+#     # 反序列化
+#     - name: "unserialize"
+#       type: "function"
+#       category: "deserialization"
+#     - name: "igbinary_unserialize"
+#       type: "function"
+#       category: "deserialization"
+
+#   sanitizers:
+#     - name: "intval"
+#       type: "function"
+#     - name: "floatval"
+#       type: "function"
+#     - name: "boolval"
+#       type: "function"
+#     - name: "addslashes"
+#       type: "function"
+#     - name: "mysqli_real_escape_string"
+#       type: "function"
+#     - name: "pg_escape_string"
+#       type: "function"
+#     - name: "PDO::quote"
+#       type: "method"
+#     - name: "filter_var"
+#       type: "function"
+#     - name: "htmlspecialchars"
+#       type: "function"
+#     - name: "htmlentities"
+#       type: "function"
+#     - name: "strip_tags"
+#       type: "function"
+#     - name: "basename"
+#       type: "function"
+
+#   validators:
+#     - name: "ctype_digit"
+#       type: "function"
+#     - name: "is_numeric"
+#       type: "function"
+#     - name: "filter_var"
+#       type: "function"
+#     - name: "preg_match"
+#       type: "function"
+
+## 输出相关设置（新版/常用）
+outputs:
+  tainted_flow: true          # 是否包含污点流路径
+  include_failures_file: ~    # 或设置为 "logs/failures.json"
+  sarif_output: false         # 是否生成 SARIF 文件
+  include_source_code: true   # 将源码片段包含在输出中
+  source_code_context: 3      # 每个片段上下保留的行数
+  json_output:
+    enabled: true
+    filename: "progpilot_results.json"
+
+
+## 行为/性能选项
+options:
+  analyze_includes: true
+  debug_mode: false
+  pretty_print: true
+  # 单个文件最大分析时长（秒），启用可避免卡在复杂文件
+  max_file_analysis_duration: 30
+  # 单个上下文允许的最大定义数（类/函数等），防止分析爆炸
+  max_definitions: 500
+  # 超过该字节数的文件将跳过分析
+  max_file_size: 1000000
