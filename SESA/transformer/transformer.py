@@ -120,14 +120,14 @@ count=0
 #     count=0
 #     fp.close()
 
-ds_vuln_with_source_code = datasets.load_dataset("Mr-Vicky-01/vuln-with-source-code")
-with open('Mr-Vicky-01.json','w',encoding='utf-8') as fp:
-    for item in ds_vuln_with_source_code['train']:
-        json.dump(item,fp)
-        count+=1
-        print(count)
-    count=0
-    fp.close
+# ds_vuln_with_source_code = datasets.load_dataset("Mr-Vicky-01/vuln-with-source-code")
+# with open('Mr-Vicky-01.json','w',encoding='utf-8') as fp:
+#     for item in ds_vuln_with_source_code['train']:
+#         json.dump(item,fp)
+#         count+=1
+#         print(count)
+#     count=0
+#     fp.close
 
 ############
 #没用
