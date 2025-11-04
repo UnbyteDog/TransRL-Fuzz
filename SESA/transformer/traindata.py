@@ -565,25 +565,25 @@ count = 0
 #             item = json.dumps(item)
 #             fp.write(item+'\n')
 
-ds_vulnfixes_web = datasets.load_dataset("kevinwsbr/vulnfixes-web")
-with open("./SESA/transformer/data/one_kevinwsbr.jsonl","a+",encoding='utf-8') as one,open("./SESA/transformer/data/zero_kevinwsbr.jsonl","a+",encoding="utf-8") as zero:
-    for item in ds_vulnfixes_web["train"]:
-        if "php" in item["instruction"]:
-            ones = {
-                "code" : item['input'],
-                "language" : "php",
-                "vulnerability_type" : item['instruction'],
-                "label" : 1
-            }
-            zeros = {
-                "code" : item['output'],
-                "language" : "php",
-                "vulnerability_type" : item['instruction'],
-                "label" : 0
-            }
-            ones = json.dumps(ones)
-            zeros = json.dumps(zeros)
-            one.write(ones+'\n')
-            zero.write(zeros+'\n')
-    one.close()
-    zero.close()
+# ds_vulnfixes_web = datasets.load_dataset("kevinwsbr/vulnfixes-web")
+# with open("./SESA/transformer/data/one_kevinwsbr.jsonl","a+",encoding='utf-8') as one,open("./SESA/transformer/data/zero_kevinwsbr.jsonl","a+",encoding="utf-8") as zero:
+#     for item in ds_vulnfixes_web["train"]:
+#         if "php" in item["instruction"]:
+#             ones = {
+#                 "code" : item['input'],
+#                 "language" : "php",
+#                 "vulnerability_type" : item['instruction'],
+#                 "label" : 1
+#             }
+#             zeros = {
+#                 "code" : item['output'],
+#                 "language" : "php",
+#                 "vulnerability_type" : item['instruction'],
+#                 "label" : 0
+#             }
+#             ones = json.dumps(ones)
+#             zeros = json.dumps(zeros)
+#             one.write(ones+'\n')
+#             zero.write(zeros+'\n')
+#     one.close()
+#     zero.close()
