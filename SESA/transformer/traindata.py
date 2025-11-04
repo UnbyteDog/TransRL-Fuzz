@@ -297,16 +297,13 @@ count = 0
 #     return False
 
 # def extract_php_code_from_text(text: str) -> str:
-#     """
-#     从文本中提取PHP代码块
-#     """
+
 #     # 方法1: 提取<code>标签内的内容
 #     code_blocks = re.findall(r'<code>(.*?)</code>', text, re.DOTALL)
 #     if code_blocks:
-#         # 返回第一个代码块
+
 #         return code_blocks[0].strip()
-    
-#     # 方法2: 提取PHP代码片段
+
 #     php_pattern = r'(<\?php.*?\?>)|(<\?.*?\?>)'
 #     php_matches = re.findall(php_pattern, text, re.DOTALL)
 #     if php_matches:
@@ -314,8 +311,7 @@ count = 0
 #         matches = [match for group in php_matches for match in group if match]
 #         if matches:
 #             return matches[0].strip()
-    
-#     # 方法3: 如果文本本身就是PHP代码，直接返回
+
 #     if '<?php' in text or '$_' in text:
 #         return text.strip()
     
@@ -354,13 +350,8 @@ count = 0
 #     return "unknown"
 
 # def determine_label(code: str, context: Dict[str, Any]) -> int:
-#     """
-#     判断代码是否有漏洞 (1) 还是安全 (0)
-#     """
-#     # 方法1: 根据代码特征判断
 #     code_lower = code.lower()
     
-#     # 明显的不安全模式
 #     unsafe_patterns = [
 #         r'mysql_query.*\$',          # SQL拼接
 #         r'echo.*\$_',                # 未过滤输出
@@ -373,21 +364,13 @@ count = 0
 #         if re.search(pattern, code_lower):
 #             return 1  # 有漏洞
     
-#     # 方法2: 根据response中的安全改进判断
 #     if 'safe_load' in context.get('response', '') and 'pickle' in context.get('prompt', ''):
-#         # 如果响应中使用了安全方法，而提示中使用了不安全方法
 #         return 1 if 'pickle' in code_lower else 0
     
-#     # 默认认为是安全的
 #     return 0
 
 # def process_single_item(item: Dict[str, Any]) -> List[Dict[str, Any]]:
-#     """
-#     处理单个数据项，提取PHP代码并转换为目标格式
-#     """
-#     results = []
-    
-#     # 检查的字段列表
+
 #     fields_to_check = [
 #         'prompt',
 #         'response', 
@@ -401,7 +384,6 @@ count = 0
 #         if field in item:
 #             content = item[field]
             
-#             # 处理字符串内容
 #             if isinstance(content, str) and is_php_code(content):
 #                 php_code = extract_php_code_from_text(content)
 #                 if php_code and len(php_code) > 10:  # 确保代码长度合理
@@ -411,8 +393,6 @@ count = 0
 #                         "vulnerability_type": determine_vulnerability_type(php_code),
 #                         "label": determine_label(php_code, item)
 #                     })
-            
-#             # 处理消息列表（对话格式）
 #             elif isinstance(content, list):
 #                 for message in content:
 #                     if isinstance(message, dict) and 'content' in message:
@@ -523,4 +503,65 @@ count = 0
 # cleaned_samples = clean_and_deduplicate(php_samples)
 # save_as_jsonl(cleaned_samples, 'php_vulnerability_dataset.jsonl')
 
-## 处理hugo0076/Generic-Code-Vulnerability-Backdoor
+## 处理hugo0076/Generic-Code-Vulnerability-Backdoor  用不了
+# ds_Generic_Code_Vulnerability_Backdoor = datasets.load_dataset("hugo0076/Generic-Code-Vulnerability-Backdoor")
+# with open("./1.jsonl","a+",encoding="utf-8") as fp:
+#     for item in ds_Generic_Code_Vulnerability_Backdoor['benign_train']:
+#         print(item)
+#         item = json.dumps(item,ensure_ascii=False)
+#         fp.write(item+'\n')
+#     for item in ds_Generic_Code_Vulnerability_Backdoor['benign_test']:
+#         print(item)
+#         item = json.dumps(item,ensure_ascii=False)
+#         fp.write(item+'\n')
+
+
+#ngernxaychalern/code-vulnerability-json不能用
+# with open("1.jsonl","a+",encoding='utf-8') as fp:
+#     ds_code_vulnerability_json = datasets.load_dataset("ngernxaychalern/code-vulnerability-json")
+#     for item in ds_code_vulnerability_json["train"]:
+#         item = json.dumps(item)
+#         fp.write(item+'\n')
+'''{
+    "code" : " ",
+    "language" : " ",
+    "vulnerability_type": " ",
+    "label" : 1 or 0
+}'''
+
+# with open("./SESA/transformer/data/one_PJMixers.jsonl","a+",encoding='utf-8') as one,open("./SESA/transformer/data/zero_PJMixers.jsonl","a+",encoding='utf-8') as zero:
+#     ds_cyberNative_code_vulnerability_security_dpo_preferenceShareGPT = datasets.load_dataset("PJMixers/CyberNative_Code_Vulnerability_Security_DPO-PreferenceShareGPT")
+#     for item in ds_cyberNative_code_vulnerability_security_dpo_preferenceShareGPT['train']:
+#         if item["lang"] == "php":
+#             ones = {
+#                 "code" : item['rejected_gpt'],
+#                 "language" : "php",
+#                 "vulnerability_type" : item['vulnerability'],
+#                 "label" : 1
+#             }
+#             zeros = {
+#                 "code" : item['chosen_gpt'],
+#                 "language" : "php",
+#                 "vulnerability_type" : item['vulnerability'],
+#                 "label" : 0
+#             }
+#             ones = json.dumps(ones)
+#             zeros = json.dumps(zeros)
+#             one.write(ones+'\n')
+#             zero.write(zeros+'\n')
+#SadiaAfreen1048/codeVulnerabilityCodeGemma不能用
+# ds_codevulnerabilitycodegemma = datasets.load_dataset("SadiaAfreen1048/codeVulnerabilityCodeGemma")
+# with open("1.jsonl","a+",encoding="utf-8") as fp:
+#     for item in ds_codevulnerabilitycodegemma['train']:
+#         if "php" in item['func']:
+#             item = json.dumps(item)
+#             fp.write(item+'\n')
+
+#SadiaAfreen1048/codeVulnerability不能用
+# ds_codeVulnerability = datasets.load_dataset("SadiaAfreen1048/codeVulnerability")
+# with open("1.jsonl","a+",encoding="utf-8") as fp:
+#     for item in ds_codeVulnerability['train']:
+#         if "php" in item['func']: 
+#             item = json.dumps(item)
+#             fp.write(item+'\n')
+
