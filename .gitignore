@@ -1,4 +1,5 @@
 test/
 json/
 .vscode/
-*.json
+/*.json/
+/*.jsonl/
