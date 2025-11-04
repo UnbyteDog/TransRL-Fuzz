@@ -269,256 +269,258 @@ count = 0
 #                 item = json.dumps(item)
 #                 zero.write(item+'\n')
 
-ds_generic_code_vulnerability_backdoor = datasets.load_dataset("hugo0076/Generic-Code-Vulnerability-Backdoor")
-# print(ds_generic_code_vulnerability_backdoor['benign_train'][10])
-# print(ds_generic_code_vulnerability_backdoor['benign_train'][1])
-# with open('1.jsonl','a+',encoding='utf-8') as fp:
-#     for item in ds_generic_code_vulnerability_backdoor['benign_train']:
-#         item = json.dumps(item)
-#         fp.write(item+'\n')
+# ds_generic_code_vulnerability_backdoor = datasets.load_dataset("hugo0076/Generic-Code-Vulnerability-Backdoor")
+# # print(ds_generic_code_vulnerability_backdoor['benign_train'][10])
+# # print(ds_generic_code_vulnerability_backdoor['benign_train'][1])
+# # with open('1.jsonl','a+',encoding='utf-8') as fp:
+# #     for item in ds_generic_code_vulnerability_backdoor['benign_train']:
+# #         item = json.dumps(item)
+# #         fp.write(item+'\n')
 
-def is_php_code(text: str) -> bool:
-    """
-    判断文本中是否包含PHP代码
-    """
-    php_indicators = [
-        r'<\?php',           # PHP开始标签
-        r'\$_GET', r'\$_POST', r'\$_REQUEST',  # PHP超全局变量
-        r'\$[a-zA-Z_]',      # PHP变量（以$开头）
-        r'function\s+[a-zA-Z_]',  # PHP函数定义
-        r'mysql_', r'mysqli_',   # MySQL相关函数
-        r'echo\s', r'print\s',   # PHP输出语句
-    ]
+# def is_php_code(text: str) -> bool:
+#     """
+#     判断文本中是否包含PHP代码
+#     """
+#     php_indicators = [
+#         r'<\?php',           # PHP开始标签
+#         r'\$_GET', r'\$_POST', r'\$_REQUEST',  # PHP超全局变量
+#         r'\$[a-zA-Z_]',      # PHP变量（以$开头）
+#         r'function\s+[a-zA-Z_]',  # PHP函数定义
+#         r'mysql_', r'mysqli_',   # MySQL相关函数
+#         r'echo\s', r'print\s',   # PHP输出语句
+#     ]
     
-    text_lower = text.lower()
-    for indicator in php_indicators:
-        if re.search(indicator, text_lower):
-            return True
-    return False
+#     text_lower = text.lower()
+#     for indicator in php_indicators:
+#         if re.search(indicator, text_lower):
+#             return True
+#     return False
 
-def extract_php_code_from_text(text: str) -> str:
-    """
-    从文本中提取PHP代码块
-    """
-    # 方法1: 提取<code>标签内的内容
-    code_blocks = re.findall(r'<code>(.*?)</code>', text, re.DOTALL)
-    if code_blocks:
-        # 返回第一个代码块
-        return code_blocks[0].strip()
+# def extract_php_code_from_text(text: str) -> str:
+#     """
+#     从文本中提取PHP代码块
+#     """
+#     # 方法1: 提取<code>标签内的内容
+#     code_blocks = re.findall(r'<code>(.*?)</code>', text, re.DOTALL)
+#     if code_blocks:
+#         # 返回第一个代码块
+#         return code_blocks[0].strip()
     
-    # 方法2: 提取PHP代码片段
-    php_pattern = r'(<\?php.*?\?>)|(<\?.*?\?>)'
-    php_matches = re.findall(php_pattern, text, re.DOTALL)
-    if php_matches:
-        # 展平元组并过滤空值
-        matches = [match for group in php_matches for match in group if match]
-        if matches:
-            return matches[0].strip()
+#     # 方法2: 提取PHP代码片段
+#     php_pattern = r'(<\?php.*?\?>)|(<\?.*?\?>)'
+#     php_matches = re.findall(php_pattern, text, re.DOTALL)
+#     if php_matches:
+#         # 展平元组并过滤空值
+#         matches = [match for group in php_matches for match in group if match]
+#         if matches:
+#             return matches[0].strip()
     
-    # 方法3: 如果文本本身就是PHP代码，直接返回
-    if '<?php' in text or '$_' in text:
-        return text.strip()
+#     # 方法3: 如果文本本身就是PHP代码，直接返回
+#     if '<?php' in text or '$_' in text:
+#         return text.strip()
     
-    return ""
+#     return ""
 
-def determine_vulnerability_type(code: str) -> str:
-    """
-    根据代码内容判断漏洞类型
-    """
-    code_lower = code.lower()
+# def determine_vulnerability_type(code: str) -> str:
+#     """
+#     根据代码内容判断漏洞类型
+#     """
+#     code_lower = code.lower()
     
-    # SQL注入相关
-    if re.search(r'mysql_query.*\$', code_lower) or re.search(r'SELECT.*\$', code_lower):
-        return "sql_injection"
+#     # SQL注入相关
+#     if re.search(r'mysql_query.*\$', code_lower) or re.search(r'SELECT.*\$', code_lower):
+#         return "sql_injection"
     
-    # XSS相关
-    if re.search(r'echo.*\$', code_lower) or re.search(r'print.*\$', code_lower):
-        return "xss"
+#     # XSS相关
+#     if re.search(r'echo.*\$', code_lower) or re.search(r'print.*\$', code_lower):
+#         return "xss"
     
-    # 文件包含
-    if 'include' in code_lower or 'require' in code_lower:
-        return "file_inclusion"
+#     # 文件包含
+#     if 'include' in code_lower or 'require' in code_lower:
+#         return "file_inclusion"
     
-    # 命令注入
-    if 'exec(' in code_lower or 'system(' in code_lower or 'shell_exec(' in code_lower:
-        return "command_injection"
+#     # 命令注入
+#     if 'exec(' in code_lower or 'system(' in code_lower or 'shell_exec(' in code_lower:
+#         return "command_injection"
     
-    # 反序列化
-    if 'unserialize(' in code_lower:
-        return "deserialization"
+#     # 反序列化
+#     if 'unserialize(' in code_lower:
+#         return "deserialization"
     
-    # 硬编码凭证
-    if re.search(r'password\s*=\s*["\']', code_lower) or re.search(r'username\s*=\s*["\']', code_lower):
-        return "hardcoded_credentials"
+#     # 硬编码凭证
+#     if re.search(r'password\s*=\s*["\']', code_lower) or re.search(r'username\s*=\s*["\']', code_lower):
+#         return "hardcoded_credentials"
     
-    return "unknown"
+#     return "unknown"
 
-def determine_label(code: str, context: Dict[str, Any]) -> int:
-    """
-    判断代码是否有漏洞 (1) 还是安全 (0)
-    """
-    # 方法1: 根据代码特征判断
-    code_lower = code.lower()
+# def determine_label(code: str, context: Dict[str, Any]) -> int:
+#     """
+#     判断代码是否有漏洞 (1) 还是安全 (0)
+#     """
+#     # 方法1: 根据代码特征判断
+#     code_lower = code.lower()
     
-    # 明显的不安全模式
-    unsafe_patterns = [
-        r'mysql_query.*\$',          # SQL拼接
-        r'echo.*\$_',                # 未过滤输出
-        r'include.*\$',              # 动态文件包含
-        r'unserialize.*\$',           # 不安全的反序列化
-        r'eval\(.*\$',               # eval使用变量
-    ]
+#     # 明显的不安全模式
+#     unsafe_patterns = [
+#         r'mysql_query.*\$',          # SQL拼接
+#         r'echo.*\$_',                # 未过滤输出
+#         r'include.*\$',              # 动态文件包含
+#         r'unserialize.*\$',           # 不安全的反序列化
+#         r'eval\(.*\$',               # eval使用变量
+#     ]
     
-    for pattern in unsafe_patterns:
-        if re.search(pattern, code_lower):
-            return 1  # 有漏洞
+#     for pattern in unsafe_patterns:
+#         if re.search(pattern, code_lower):
+#             return 1  # 有漏洞
     
-    # 方法2: 根据response中的安全改进判断
-    if 'safe_load' in context.get('response', '') and 'pickle' in context.get('prompt', ''):
-        # 如果响应中使用了安全方法，而提示中使用了不安全方法
-        return 1 if 'pickle' in code_lower else 0
+#     # 方法2: 根据response中的安全改进判断
+#     if 'safe_load' in context.get('response', '') and 'pickle' in context.get('prompt', ''):
+#         # 如果响应中使用了安全方法，而提示中使用了不安全方法
+#         return 1 if 'pickle' in code_lower else 0
     
-    # 默认认为是安全的
-    return 0
+#     # 默认认为是安全的
+#     return 0
 
-def process_single_item(item: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """
-    处理单个数据项，提取PHP代码并转换为目标格式
-    """
-    results = []
+# def process_single_item(item: Dict[str, Any]) -> List[Dict[str, Any]]:
+#     """
+#     处理单个数据项，提取PHP代码并转换为目标格式
+#     """
+#     results = []
     
-    # 检查的字段列表
-    fields_to_check = [
-        'prompt',
-        'response', 
-        'prompt_no_scratchpad',
-        'response_no_scratchpad',
-        'messages',
-        'messages_no_scratchpad'
-    ]
+#     # 检查的字段列表
+#     fields_to_check = [
+#         'prompt',
+#         'response', 
+#         'prompt_no_scratchpad',
+#         'response_no_scratchpad',
+#         'messages',
+#         'messages_no_scratchpad'
+#     ]
     
-    for field in fields_to_check:
-        if field in item:
-            content = item[field]
+#     for field in fields_to_check:
+#         if field in item:
+#             content = item[field]
             
-            # 处理字符串内容
-            if isinstance(content, str) and is_php_code(content):
-                php_code = extract_php_code_from_text(content)
-                if php_code and len(php_code) > 10:  # 确保代码长度合理
-                    results.append({
-                        "code": php_code,
-                        "language": "php",
-                        "vulnerability_type": determine_vulnerability_type(php_code),
-                        "label": determine_label(php_code, item)
-                    })
+#             # 处理字符串内容
+#             if isinstance(content, str) and is_php_code(content):
+#                 php_code = extract_php_code_from_text(content)
+#                 if php_code and len(php_code) > 10:  # 确保代码长度合理
+#                     results.append({
+#                         "code": php_code,
+#                         "language": "php",
+#                         "vulnerability_type": determine_vulnerability_type(php_code),
+#                         "label": determine_label(php_code, item)
+#                     })
             
-            # 处理消息列表（对话格式）
-            elif isinstance(content, list):
-                for message in content:
-                    if isinstance(message, dict) and 'content' in message:
-                        message_content = message['content']
-                        if is_php_code(message_content):
-                            php_code = extract_php_code_from_text(message_content)
-                            if php_code and len(php_code) > 10:
-                                results.append({
-                                    "code": php_code,
-                                    "language": "php",
-                                    "vulnerability_type": determine_vulnerability_type(php_code),
-                                    "label": determine_label(php_code, item)
-                                })
+#             # 处理消息列表（对话格式）
+#             elif isinstance(content, list):
+#                 for message in content:
+#                     if isinstance(message, dict) and 'content' in message:
+#                         message_content = message['content']
+#                         if is_php_code(message_content):
+#                             php_code = extract_php_code_from_text(message_content)
+#                             if php_code and len(php_code) > 10:
+#                                 results.append({
+#                                     "code": php_code,
+#                                     "language": "php",
+#                                     "vulnerability_type": determine_vulnerability_type(php_code),
+#                                     "label": determine_label(php_code, item)
+#                                 })
     
-    return results
+#     return results
 
-def process_dataset(dataset: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """
-    处理整个数据集
-    """
-    all_php_samples = []
-    processed_count = 0
-    php_found_count = 0
+# def process_dataset(dataset: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+#     """
+#     处理整个数据集
+#     """
+#     all_php_samples = []
+#     processed_count = 0
+#     php_found_count = 0
     
-    for i, item in enumerate(dataset):
-        try:
-            samples = process_single_item(item)
-            if samples:
-                all_php_samples.extend(samples)
-                php_found_count += len(samples)
-                print(f"处理第 {i+1} 项: 找到 {len(samples)} 个PHP样本")
+#     for i, item in enumerate(dataset):
+#         try:
+#             samples = process_single_item(item)
+#             if samples:
+#                 all_php_samples.extend(samples)
+#                 php_found_count += len(samples)
+#                 print(f"处理第 {i+1} 项: 找到 {len(samples)} 个PHP样本")
             
-            processed_count += 1
+#             processed_count += 1
             
-            # 进度显示
-            if (i + 1) % 100 == 0:
-                print(f"已处理 {i+1}/{len(dataset)} 项，找到 {php_found_count} 个PHP样本")
+#             # 进度显示
+#             if (i + 1) % 100 == 0:
+#                 print(f"已处理 {i+1}/{len(dataset)} 项，找到 {php_found_count} 个PHP样本")
                 
-        except Exception as e:
-            print(f"处理第 {i+1} 项时出错: {e}")
-            continue
+#         except Exception as e:
+#             print(f"处理第 {i+1} 项时出错: {e}")
+#             continue
     
-    # 统计信息
-    print(f"\n处理完成!")
-    print(f"总共处理: {processed_count} 项")
-    print(f"找到PHP样本: {len(all_php_samples)} 个")
+#     # 统计信息
+#     print(f"\n处理完成!")
+#     print(f"总共处理: {processed_count} 项")
+#     print(f"找到PHP样本: {len(all_php_samples)} 个")
     
-    # 漏洞类型统计
-    vuln_stats = {}
-    for sample in all_php_samples:
-        vuln_type = sample['vulnerability_type']
-        vuln_stats[vuln_type] = vuln_stats.get(vuln_type, 0) + 1
+#     # 漏洞类型统计
+#     vuln_stats = {}
+#     for sample in all_php_samples:
+#         vuln_type = sample['vulnerability_type']
+#         vuln_stats[vuln_type] = vuln_stats.get(vuln_type, 0) + 1
     
-    print("漏洞类型分布:")
-    for vuln_type, count in vuln_stats.items():
-        print(f"  {vuln_type}: {count} 个样本")
+#     print("漏洞类型分布:")
+#     for vuln_type, count in vuln_stats.items():
+#         print(f"  {vuln_type}: {count} 个样本")
     
-    # 标签分布
-    label_stats = {}
-    for sample in all_php_samples:
-        label = sample['label']
-        label_stats[label] = label_stats.get(label, 0) + 1
+#     # 标签分布
+#     label_stats = {}
+#     for sample in all_php_samples:
+#         label = sample['label']
+#         label_stats[label] = label_stats.get(label, 0) + 1
     
-    print("标签分布:")
-    for label, count in label_stats.items():
-        status = "有漏洞" if label == 1 else "安全"
-        print(f"  {status}: {count} 个样本")
+#     print("标签分布:")
+#     for label, count in label_stats.items():
+#         status = "有漏洞" if label == 1 else "安全"
+#         print(f"  {status}: {count} 个样本")
     
-    return all_php_samples
+#     return all_php_samples
 
-def save_as_jsonl(data: List[Dict[str, Any]], filename: str):
-    """
-    保存为JSONL格式
-    """
-    with open(filename, 'w', encoding='utf-8') as f:
-        for item in data:
-            f.write(json.dumps(item, ensure_ascii=False) + '\n')
-    print(f"数据已保存到 {filename}")
+# def save_as_jsonl(data: List[Dict[str, Any]], filename: str):
+#     """
+#     保存为JSONL格式
+#     """
+#     with open(filename, 'w', encoding='utf-8') as f:
+#         for item in data:
+#             f.write(json.dumps(item, ensure_ascii=False) + '\n')
+#     print(f"数据已保存到 {filename}")
 
-def clean_and_deduplicate(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """
-    清理和去重数据
-    """
-    cleaned_data = []
-    seen_hashes = set()
+# def clean_and_deduplicate(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+#     """
+#     清理和去重数据
+#     """
+#     cleaned_data = []
+#     seen_hashes = set()
     
-    for item in data:
-        # 清理代码
-        code = item['code'].strip()
-        if len(code) < 20:  # 跳过过短的代码
-            continue
+#     for item in data:
+#         # 清理代码
+#         code = item['code'].strip()
+#         if len(code) < 20:  # 跳过过短的代码
+#             continue
         
-        # 创建哈希来去重
-        code_hash = hash(code)
-        if code_hash in seen_hashes:
-            continue
+#         # 创建哈希来去重
+#         code_hash = hash(code)
+#         if code_hash in seen_hashes:
+#             continue
         
-        seen_hashes.add(code_hash)
+#         seen_hashes.add(code_hash)
         
-        # 更新清理后的代码
-        cleaned_item = item.copy()
-        cleaned_item['code'] = code
-        cleaned_data.append(cleaned_item)
+#         # 更新清理后的代码
+#         cleaned_item = item.copy()
+#         cleaned_item['code'] = code
+#         cleaned_data.append(cleaned_item)
     
-    print(f"去重后剩余 {len(cleaned_data)} 个样本")
-    return cleaned_data
-php_samples = process_dataset(ds_generic_code_vulnerability_backdoor)
-cleaned_samples = clean_and_deduplicate(php_samples)
-save_as_jsonl(cleaned_samples, 'php_vulnerability_dataset.jsonl')
+#     print(f"去重后剩余 {len(cleaned_data)} 个样本")
+#     return cleaned_data
+# php_samples = process_dataset(ds_generic_code_vulnerability_backdoor)
+# cleaned_samples = clean_and_deduplicate(php_samples)
+# save_as_jsonl(cleaned_samples, 'php_vulnerability_dataset.jsonl')
+
+## 处理hugo0076/Generic-Code-Vulnerability-Backdoor
