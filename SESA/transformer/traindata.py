@@ -307,6 +307,13 @@ count = 0
 #         return code_blocks[0].strip()
     
 #     # 方法2: 提取PHP代码片段
+
+#     # 方法1: 提取<code>标签内的内容
+#     code_blocks = re.findall(r'<code>(.*?)</code>', text, re.DOTALL)
+#     if code_blocks:
+
+#         return code_blocks[0].strip()
+
 #     php_pattern = r'(<\?php.*?\?>)|(<\?.*?\?>)'
 #     php_matches = re.findall(php_pattern, text, re.DOTALL)
 #     if php_matches:
@@ -316,6 +323,7 @@ count = 0
 #             return matches[0].strip()
     
 #     # 方法3: 如果文本本身就是PHP代码，直接返回
+
 #     if '<?php' in text or '$_' in text:
 #         return text.strip()
     
@@ -361,6 +369,8 @@ count = 0
 #     code_lower = code.lower()
     
 #     # 明显的不安全模式
+#     code_lower = code.lower()
+    
 #     unsafe_patterns = [
 #         r'mysql_query.*\$',          # SQL拼接
 #         r'echo.*\$_',                # 未过滤输出
@@ -388,6 +398,13 @@ count = 0
 #     results = []
     
 #     # 检查的字段列表
+#     if 'safe_load' in context.get('response', '') and 'pickle' in context.get('prompt', ''):
+#         return 1 if 'pickle' in code_lower else 0
+    
+#     return 0
+
+# def process_single_item(item: Dict[str, Any]) -> List[Dict[str, Any]]:
+
 #     fields_to_check = [
 #         'prompt',
 #         'response', 
@@ -524,3 +541,93 @@ count = 0
 # save_as_jsonl(cleaned_samples, 'php_vulnerability_dataset.jsonl')
 
 ## 处理hugo0076/Generic-Code-Vulnerability-Backdoor
+## 处理hugo0076/Generic-Code-Vulnerability-Backdoor  用不了
+# ds_Generic_Code_Vulnerability_Backdoor = datasets.load_dataset("hugo0076/Generic-Code-Vulnerability-Backdoor")
+# with open("./1.jsonl","a+",encoding="utf-8") as fp:
+#     for item in ds_Generic_Code_Vulnerability_Backdoor['benign_train']:
+#         print(item)
+#         item = json.dumps(item,ensure_ascii=False)
+#         fp.write(item+'\n')
+#     for item in ds_Generic_Code_Vulnerability_Backdoor['benign_test']:
+#         print(item)
+#         item = json.dumps(item,ensure_ascii=False)
+#         fp.write(item+'\n')
+
+
+#ngernxaychalern/code-vulnerability-json不能用
+# with open("1.jsonl","a+",encoding='utf-8') as fp:
+#     ds_code_vulnerability_json = datasets.load_dataset("ngernxaychalern/code-vulnerability-json")
+#     for item in ds_code_vulnerability_json["train"]:
+#         item = json.dumps(item)
+#         fp.write(item+'\n')
+'''{
+    "code" : " ",
+    "language" : " ",
+    "vulnerability_type": " ",
+    "label" : 1 or 0
+}'''
+
+# with open("./SESA/transformer/data/one_PJMixers.jsonl","a+",encoding='utf-8') as one,open("./SESA/transformer/data/zero_PJMixers.jsonl","a+",encoding='utf-8') as zero:
+#     ds_cyberNative_code_vulnerability_security_dpo_preferenceShareGPT = datasets.load_dataset("PJMixers/CyberNative_Code_Vulnerability_Security_DPO-PreferenceShareGPT")
+#     for item in ds_cyberNative_code_vulnerability_security_dpo_preferenceShareGPT['train']:
+#         if item["lang"] == "php":
+#             ones = {
+#                 "code" : item['rejected_gpt'],
+#                 "language" : "php",
+#                 "vulnerability_type" : item['vulnerability'],
+#                 "label" : 1
+#             }
+#             zeros = {
+#                 "code" : item['chosen_gpt'],
+#                 "language" : "php",
+#                 "vulnerability_type" : item['vulnerability'],
+#                 "label" : 0
+#             }
+#             ones = json.dumps(ones)
+#             zeros = json.dumps(zeros)
+#             one.write(ones+'\n')
+#             zero.write(zeros+'\n')
+#SadiaAfreen1048/codeVulnerabilityCodeGemma不能用
+# ds_codevulnerabilitycodegemma = datasets.load_dataset("SadiaAfreen1048/codeVulnerabilityCodeGemma")
+# with open("1.jsonl","a+",encoding="utf-8") as fp:
+#     for item in ds_codevulnerabilitycodegemma['train']:
+#         if "php" in item['func']:
+#             item = json.dumps(item)
+#             fp.write(item+'\n')
+
+#SadiaAfreen1048/codeVulnerability不能用
+# ds_codeVulnerability = datasets.load_dataset("SadiaAfreen1048/codeVulnerability")
+# with open("1.jsonl","a+",encoding="utf-8") as fp:
+#     for item in ds_codeVulnerability['train']:
+#         if "php" in item['func']: 
+#             item = json.dumps(item)
+#             fp.write(item+'\n')
+
+# ds_vulnfixes_web = datasets.load_dataset("kevinwsbr/vulnfixes-web")
+# with open("./SESA/transformer/data/one_kevinwsbr.jsonl","a+",encoding='utf-8') as one,open("./SESA/transformer/data/zero_kevinwsbr.jsonl","a+",encoding="utf-8") as zero:
+#     for item in ds_vulnfixes_web["train"]:
+#         if "php" in item["instruction"]:
+#             ones = {
+#                 "code" : item['input'],
+#                 "language" : "php",
+#                 "vulnerability_type" : item['instruction'],
+#                 "label" : 1
+#             }
+#             zeros = {
+#                 "code" : item['output'],
+#                 "language" : "php",
+#                 "vulnerability_type" : item['instruction'],
+#                 "label" : 0
+#             }
+#             ones = json.dumps(ones)
+#             zeros = json.dumps(zeros)
+#             one.write(ones+'\n')
+#             zero.write(zeros+'\n')
+#     one.close()
+#     zero.close()
+
+ds_vulnerability_cwe_patch = datasets.load_dataset("CIRCL/vulnerability-cwe-patch")
+print(ds_vulnerability_cwe_patch)
+print(f"{ds_vulnerability_cwe_patch['train'][0]}\n")
+print(f"{ds_vulnerability_cwe_patch['train'][10]}\n")
+print(f"{ds_vulnerability_cwe_patch['train'][80]}\n")

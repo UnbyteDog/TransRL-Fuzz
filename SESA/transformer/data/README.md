@@ -1,7 +1,10 @@
-**SESA\transformer\data\one_CyberNative.jsonl
-SESA\transformer\data\one_jacpetro.jsonl
-SESA\transformer\data\one_Mackerel2.jsonl
-SESA\transformer\data\zero_CyberNative.jsonl
-SESA\transformer\data\zero_jacpetro.jsonl
-SESA\transformer\data\zero_Mackerel2.jsonl**
-**这几个是同一份**
+**数据集来源**
+```python
+datasets.load_dataset("ngernxaychalern/code-vulnerability-json")
+datasets.load_dataset("tranquangtien15092005/code-vulnerability-json")
+datasets.load_dataset("tranquangtien15092005/code-vulnerability-3000-sample")
+datasets.load_dataset("lemon42-ai/Code_Vulnerability_Labeled_Dataset")
+datasets.load_dataset("Mr-Vicky-01/vuln-with-source-code")
+datasets.load_dataset("PJMixers/CyberNative_Code_Vulnerability_Security_DPO-PreferenceShareGPT")
+datasets.load_dataset("kevinwsbr/vulnfixes-web")
+```

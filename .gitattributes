@@ -1,0 +1,2 @@
+*.jsonl filter=lfs diff=lfs merge=lfs -text
+SESA/transformer/data/*.jsonl filter=lfs diff=lfs merge=lfs -text
