@@ -625,9 +625,12 @@ count = 0
 #             zero.write(zeros+'\n')
 #     one.close()
 #     zero.close()
-
-ds_vulnerability_cwe_patch = datasets.load_dataset("CIRCL/vulnerability-cwe-patch")
-print(ds_vulnerability_cwe_patch)
-print(f"{ds_vulnerability_cwe_patch['train'][0]}\n")
-print(f"{ds_vulnerability_cwe_patch['train'][10]}\n")
-print(f"{ds_vulnerability_cwe_patch['train'][80]}\n")
+with open("1.jsonl","a+",encoding="utf-8") as fp:
+    ds_vulnerability_cwe_patch = datasets.load_dataset("CIRCL/vulnerability-cwe-patch")
+    # print(ds_vulnerability_cwe_patch)
+    for item in ds_vulnerability_cwe_patch['train']:
+        item = json.dumps(item)
+        fp.write(item+'\n')
+    for item in ds_vulnerability_cwe_patch['test']:
+        item = json.dumps(item)
+        fp.write(item+'\n')
