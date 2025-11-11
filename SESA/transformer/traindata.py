@@ -160,7 +160,7 @@ count = 0
     
 #     return samples
 
-# ds_cybernative_code_vulnerability_cot = datasets.load_dataset("Mackerel2/cybernative_code_vulnerability_cot")
+# ds_cybernative_code_vulnerability_cot = datasets.load_dataset("Mackerel2/cybernative_code_vulnerability_cot")#不能用
 # with open("./SESA/transformer/data/one_Mackerel2.jsonl","a+",encoding="utf-8") as one,open("./SESA/transformer/data/zero_Mackerel2.jsonl","a+",encoding="utf-8") as zero:
 #     for item in ds_cybernative_code_vulnerability_cot['train']:
 #         if "php" in item['question']:
@@ -169,7 +169,7 @@ count = 0
 #             one.write(ones+'\n')
 #             zero.write(zeross+'\n')
 
-# ds_code_search_net_php = datasets.load_dataset("Nan-Do/code-search-net-php")
+# ds_code_search_net_php = datasets.load_dataset("Nan-Do/code-search-net-php") #不能用
 # print(f"{ds_code_search_net_php['train'][0]}")
 
 # def is_php_code(item):
@@ -588,8 +588,51 @@ count = 0
 #     one.close()
 #     zero.close()
 
+import base64
 ds_vulnerability_cwe_patch = datasets.load_dataset("CIRCL/vulnerability-cwe-patch")
-print(ds_vulnerability_cwe_patch)
-print(f"{ds_vulnerability_cwe_patch['train'][0]}\n")
-print(f"{ds_vulnerability_cwe_patch['train'][10]}\n")
-print(f"{ds_vulnerability_cwe_patch['train'][80]}\n")
+print(ds_vulnerability_cwe_patch["train"][0]['patches'][0]["patch_text_b64"])
+with open("./SESA/transformer/2.jsonl","a+",encoding="utf-8") as fp:
+    for item in ds_vulnerability_cwe_patch["train"]:
+        count += 1
+        print(count)
+        item["patches"][0]["patch_text_b64"] = str(base64.b64decode(item["patches"][0]["patch_text_b64"]))
+        item = json.dumps(item)
+        fp.write(item+'\n')
+    for item in ds_vulnerability_cwe_patch["test"]:
+        count += 1
+        item["patches"][0]["patch_text_b64"] = str(base64.b64decode(item["patches"][0]["patch_text_b64"]))
+        item = json.dumps(item)
+        fp.write(item+'\n')
+        print(count)
+count = 0
+with open("./SESA/transformer/2.jsonl","r") as fp,open("./SESA/transformer/CIRCL.jsonl","w",encoding="utf-8") as ci:
+    for data in fp:
+        item = json.loads(data)
+        if "php" in item["patches"][0]["commit_message"]:
+            print(item["patches"][0]["commit_message"])
+            item = json.dumps(item)
+            ci.write(item+'\n')
+            count+=1
+            print(f"item['patches'][0]['commit_message']{count}")
+            continue
+        elif "php" in item["title"]:
+            print(item["title"])
+            item = json.dumps(item)
+            ci.write(item+'\n')
+            count+=1
+            print(f"item['title']{count}")
+            continue
+        elif "php" in item["patches"][0]["patch_text_b64"]:
+            print(item["patches"][0]["patch_text_b64"])
+            item = json.dumps(item)
+            ci.write(item+'\n')
+            count+=1
+            print(f"item['patches'][0]['patch_text_b64']{count}")
+            continue
+        elif "php" in item["description"]:
+            print(item["description"])
+            item = json.dumps(item)
+            ci.write(item+'\n')
+            count+=1
+            print(f"item['description']{count}")
+            continue
