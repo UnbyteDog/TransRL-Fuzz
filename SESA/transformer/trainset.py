@@ -165,6 +165,7 @@ def json_jiscecseaiml(dataset):
             fp.write(json.dumps(item_zero)+'\n')
 
 def main():
+    #这两个重复了
     dataset_CyberNative = "CyberNative/Code_Vulnerability_Security_DPO"
     json_CyberNative(dataset_CyberNative)
     dataset_jacpetro = "jacpetro/Code_Vulnerability_Security_DPO"
