@@ -1,6 +1,13 @@
 test/
 json/
 .vscode/
+<<<<<<< HEAD
 *.json
 /*.json
 /*.jsonl
+=======
+/*.json/
+/*.jsonl
+*.jsonl
+data/
+>>>>>>> 76b14638dc49df26627bb0227cfa601da5e183a3
