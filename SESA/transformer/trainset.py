@@ -198,7 +198,7 @@ def main():
     dataset_jiscecseaiml = "jiscecseaiml/vulnerability-fix-dataset"     #java
     json_jiscecseaiml(dataset_jiscecseaiml)
 
-    dataset_lealec = "lealec/my-code-vulnerbility-dataset"
-    json_lealec(dataset_lealec)
+    # dataset_lealec = "lealec/my-code-vulnerbility-dataset"
+    # json_lealec(dataset_lealec)
 if __name__ == "__main__":
     main()
