@@ -164,27 +164,40 @@ def json_jiscecseaiml(dataset):
             item_zero = genitem(code=item[2],label=0,language="java")
             fp.write(json.dumps(item_zero)+'\n')
 
-def json_lealec(dataset):
+def json_Nan_Do(dataset):
     '''
-    lealec/my-code-vulnerbility-dataset数据集
+    Nan-Do/code-search-net-php数据集
     '''
     filename = dataset.split('/')[0]+".jsonl"
     filepath = "./SESA/transformer/data/"+filename
     if isexists(filepath):
         return print(f"文件{filepath}已存在，跳过处理")
-    datas = kagglehub.dataset_download(dataset) + "\\vulnerabilities.jsonl"
-    with open(datas,"r",encoding="utf-8") as fp,open(filepath,"a+",encoding="utf-8") as fd:
-        for item in fp:
-            if "PHP" in item["language"]:
-                item_one = genitem(code=item["code_snippet"],label=0,language="php",vulnerability_type=item["vulnerability_type"],prompt=item["description"])
-                fd.write(json.dumps(item_one)+'\n')
+    datas = load_dataset(dataset)
+    with open(filepath,"a+",encoding="utf-8") as fp:
+        for item in datas[list(datas.keys())[0]]:
+            item_one = genitem(code=item["original_string"],label=0,prompt=item["summary"])
+            fp.write(json.dumps(item_one)+'\n')
+
+def gendataset(filepath):
+    filenames = os.listdir(filepath)
+    dataname = filepath+"Tdataset.jsonl"
+    if os.path.exists(dataname):
+        return print(f"文件{dataname}已存在，跳过处理")
+    with open(dataname,"a+",encoding="utf-8") as fp:
+        for nameitem in filenames:
+            with open(filepath+nameitem,"r",encoding="utf-8") as lp:
+                for item in lp.readlines():
+                    fp.write(item)
+
 
 def main():
-    #这两个重复了
+    #这三个重复了
     dataset_CyberNative = "CyberNative/Code_Vulnerability_Security_DPO"
     json_CyberNative(dataset_CyberNative)
-    dataset_jacpetro = "jacpetro/Code_Vulnerability_Security_DPO"
-    json_jacpetro(dataset_jacpetro)
+    # dataset_jacpetro = "jacpetro/Code_Vulnerability_Security_DPO"
+    # json_jacpetro(dataset_jacpetro)
+    # dataset_PJMixers = "PJMixers/CyberNative_Code_Vulnerability_Security_DPO-PreferenceShareGPT"
+    # json_PJMixers(dataset_PJMixers)
 
     dataset_lemon42  = "lemon42-ai/Code_Vulnerability_Labeled_Dataset"
     json_lemon42(dataset_lemon42)
@@ -192,13 +205,15 @@ def main():
     dataset_Mr_Vicky_01 = "Mr-Vicky-01/vuln-with-source-code"       #只有label=1的
     json_Mr_Vicky_01(dataset_Mr_Vicky_01)
 
-    dataset_PJMixers = "PJMixers/CyberNative_Code_Vulnerability_Security_DPO-PreferenceShareGPT"
-    json_PJMixers(dataset_PJMixers)
 
     dataset_jiscecseaiml = "jiscecseaiml/vulnerability-fix-dataset"     #java
     json_jiscecseaiml(dataset_jiscecseaiml)
 
-    # dataset_lealec = "lealec/my-code-vulnerbility-dataset"
-    # json_lealec(dataset_lealec)
+    dataset_Nan_Do = "Nan-Do/code-search-net-php"
+    json_Nan_Do(dataset_Nan_Do)
+
+    filepath = "./SESA/transformer/data/"
+    gendataset(filepath)
+
 if __name__ == "__main__":
     main()
