@@ -205,7 +205,6 @@ def main():
     dataset_Mr_Vicky_01 = "Mr-Vicky-01/vuln-with-source-code"       #只有label=1的
     json_Mr_Vicky_01(dataset_Mr_Vicky_01)
 
-
     dataset_jiscecseaiml = "jiscecseaiml/vulnerability-fix-dataset"     #java
     json_jiscecseaiml(dataset_jiscecseaiml)
 
