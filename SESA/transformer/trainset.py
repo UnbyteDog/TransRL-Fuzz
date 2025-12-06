@@ -109,7 +109,7 @@ def json_Mr_Vicky_01(dataset):
         for item in datas[list(datas.keys())[0]]:
             if "php" in item['file_path']:
                 for vuln in item['vuln']:
-                    item_one = genitem(code=vuln['code_snipped'],label=1,vulnerability_type=vuln['vulnerability'],prompt=vuln['description'],cwe=vuln['cwe_id'])
+                    item_one = genitem(code=vuln['code_snipped'],label=0,vulnerability_type=vuln['vulnerability'],prompt=vuln['description'],cwe=vuln['cwe_id'])
                     fp.write(json.dumps(item_one)+'\n')
 
 def json_PJMixers(dataset):
@@ -175,7 +175,7 @@ def json_Nan_Do(dataset):
     datas = load_dataset(dataset)
     with open(filepath,"a+",encoding="utf-8") as fp:
         for item in datas[list(datas.keys())[0]]:
-            item_one = genitem(code=item["original_string"],label=0,prompt=item["summary"])
+            item_one = genitem(code=item["original_string"],label=1,prompt=item["summary"])
             fp.write(json.dumps(item_one)+'\n')
 
 def gendataset(filepath):
@@ -208,8 +208,8 @@ def main():
     # dataset_jiscecseaiml = "jiscecseaiml/vulnerability-fix-dataset"     #java 暂时先不用
     # json_jiscecseaiml(dataset_jiscecseaiml)
 
-    dataset_Nan_Do = "Nan-Do/code-search-net-php"
-    json_Nan_Do(dataset_Nan_Do)
+    # dataset_Nan_Do = "Nan-Do/code-search-net-php"             #太多了暂时先不用
+    # json_Nan_Do(dataset_Nan_Do)
 
     filepath = "./SESA/transformer/data/"
     gendataset(filepath)

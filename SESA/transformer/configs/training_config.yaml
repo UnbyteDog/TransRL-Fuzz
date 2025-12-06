@@ -1,0 +1,77 @@
+# Web漏洞检测模型训练配置文件
+# 作者：老王
+# 时间：2025
+
+# 数据配置 - 使用相对路径
+data:
+  raw_data_path: "./data/Tdataset.jsonl"
+  train_output_path: "./data/train_samples.json"
+  val_output_path: "./data/val_samples.json"
+  train_ratio: 0.8
+
+# 模型配置 - 使用相对路径
+model:
+  base_model: "deepseek-ai/deepseek-coder-1.3b-instruct"
+  existing_lora: "./models/pentest-vulnerability-detector"
+  output_dir: "./models/fine_tuned"
+
+# 训练配置
+training:
+  # 基础训练参数
+  num_train_epochs: 5          # 增加训练轮次
+  per_device_train_batch_size: 1  # 减少batch size避免OOM
+  gradient_accumulation_steps: 16  # 有效batch size = 16
+  learning_rate: 2e-5          # 降低学习率提高稳定性
+
+  # 学习率调度
+  lr_scheduler_type: "cosine_with_restarts"  # 更好的调度策略
+  warmup_ratio: 0.05          # 减少warmup比例
+
+  # 正则化
+  weight_decay: 0.01
+  max_grad_norm: 0.5           # 更严格的梯度裁剪
+
+  # 性能优化
+  fp16: true
+  gradient_checkpointing: true
+  dataloader_num_workers: 4
+
+  # 保存和评估
+  save_strategy: "steps"
+  save_steps: 500
+  save_total_limit: 3
+  eval_strategy: "steps"
+  eval_steps: 500
+  logging_steps: 50
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+
+  # 其他设置
+  seed: 42
+  data_seed: 42
+  remove_unused_columns: false
+
+# LoRA配置
+lora:
+  rank: 16
+  alpha: 32
+  dropout: 0.05
+  bias: "none"
+  task_type: "CAUSAL_LM"
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+# 量化配置
+quantization:
+  enabled: true
+  bits: 4
+  quant_type: "nf4"
+  compute_dtype: "float16"
+  use_double_quant: true
