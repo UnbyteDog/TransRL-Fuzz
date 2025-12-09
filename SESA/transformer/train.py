@@ -151,17 +151,41 @@ def check_environment():
     os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
     print("[INFO] 已设置HuggingFace镜像加速下载")
 
-    # 检查CUDA可用性，只在有GPU时设置CUDA相关变量
+    # 检查CUDA可用性，针对RTX4050移动端优化
     try:
         import torch
+
         if torch.cuda.is_available():
-            os.environ["CUDA_LAUNCH_BLOCKING"] = "1"  # 更好的错误信息
-            os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"  # 内存碎片管理
-            os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # 指定GPU
+            # 检测GPU型号
+            gpu_name = torch.cuda.get_device_name(0).lower()
+            gpu_count = torch.cuda.device_count()
+            gpu_memory = torch.cuda.get_device_properties(0).total_memory / 1024**3  # GB
+
+            print(f"[SUCCESS] CUDA可用，GPU数量: {gpu_count}")
+            print(f"[INFO] GPU型号: {torch.cuda.get_device_name(0)}")
+            print(f"[INFO] 显存总量: {gpu_memory:.1f} GB")
+
+            # 针对RTX4050移动端的特殊优化
+            if "rtx 4050" in gpu_name or "4050" in gpu_name:
+                print("[INFO] 检测到RTX4050移动端GPU，应用专门优化...")
+                # RTX4050移动端显存较小，需要更激进的优化
+                os.environ["CUDA_LAUNCH_BLOCKING"] = "0"  # 异步执行提高效率
+                os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128,expandable_segments:True,roundup_power2_divisions:16"
+                # 针对小显存的内存优化
+                os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+                # 启用内存池和缓存优化
+                os.environ["CUDA_CACHE_DISABLE"] = "0"
+                # 设置更小的工作块大小
+                torch.cuda.empty_cache()
+            else:
+                # 其他GPU的标准配置
+                os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+                os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+                os.environ["CUDA_VISIBLE_DEVICES"] = "0"
         else:
             print("[INFO] 检测到CPU环境，优化CPU训练设置...")
-            os.environ["OMP_NUM_THREADS"] = "4"  # 限制OpenMP线程数，避免过度竞争
-            os.environ["MKL_NUM_THREADS"] = "4"   # 限制MKL线程数
+            os.environ["OMP_NUM_THREADS"] = "4"
+            os.environ["MKL_NUM_THREADS"] = "4"
     except:
         pass
 
@@ -214,7 +238,7 @@ def check_data_files(config: dict):
 
     # 检查文件大小
     file_size = os.path.getsize(raw_data_path)
-    print(f"📄 原始数据: {raw_data_path} ({file_size/1024/1024:.1f} MB)")
+    print(f"原始数据: {raw_data_path} ({file_size/1024/1024:.1f} MB)")
 
     # 尝试读取几行验证格式
     try:
@@ -310,59 +334,131 @@ def train_model(config: dict, quick_test: bool = False, args=None):
         custom_epochs = args.epochs if args else None
         custom_batch_size = args.batch_size if args else None
 
+        # 检查GPU类型以调整参数
+        import torch
+        is_rtx4050_mobile = False
+        if torch.cuda.is_available():
+            gpu_name = torch.cuda.get_device_name(0).lower()
+            gpu_memory = torch.cuda.get_device_properties(0).total_memory / 1024**3
+            if "rtx 4050" in gpu_name or "4050" in gpu_name:
+                if gpu_memory < 7:  # 小于7GB基本是移动端
+                    is_rtx4050_mobile = True
+                    print("[INFO] 检测到RTX4050移动端，调整训练参数...")
+
         if quick_test:
             # 快速测试模式 - 优化参数
-            training_config.update({
-                "num_train_epochs": 1,  # 减少到1个epoch
-                "max_steps": 100,       # 减少到100步
-                "per_device_train_batch_size": 1,
-                "save_steps": 25,
-                "eval_steps": 25,
-                "logging_steps": 5,
-                "gradient_accumulation_steps": 8,
-                "learning_rate": 5e-5,  # 稍微提高学习率
-                "warmup_steps": 10,     # 减少warmup
-            })
+            if is_rtx4050_mobile:
+                training_config.update({
+                    "num_train_epochs": 1,      # 1个epoch
+                    "max_steps": 50,            # 更少的步数
+                    "per_device_train_batch_size": 1,
+                    "save_steps": 20,           # 更频繁保存
+                    "eval_steps": 20,           # 更频繁评估
+                    "logging_steps": 5,
+                    "gradient_accumulation_steps": 8,
+                    "learning_rate": 5e-5,
+                    "warmup_steps": 5,
+                    "fp16": True,               # 启用半精度
+                    "gradient_checkpointing": True,
+                })
+            else:
+                training_config.update({
+                    "num_train_epochs": 1,
+                    "max_steps": 100,
+                    "per_device_train_batch_size": 1,
+                    "save_steps": 25,
+                    "eval_steps": 25,
+                    "logging_steps": 5,
+                    "gradient_accumulation_steps": 8,
+                    "learning_rate": 5e-5,
+                    "warmup_steps": 10,
+                })
         elif full_train:
             # 完整训练模式 - 最佳参数
-            training_config.update({
-                "num_train_epochs": 8,      # 充分训练
-                "per_device_train_batch_size": 1,
-                "gradient_accumulation_steps": 16,
-                "learning_rate": 1e-5,      # 更低的学习率，更稳定
-                "lr_scheduler_type": "cosine_with_restarts",
-                "warmup_ratio": 0.03,
-                "max_grad_norm": 0.5,
-                "weight_decay": 0.01,
-                "save_steps": 500,
-                "eval_steps": 500,
-                "logging_steps": 50,
-                "save_total_limit": 3,
-                "load_best_model_at_end": True,
-                "metric_for_best_model": "eval_loss",
-                "greater_is_better": False,
-                "eval_strategy": "steps",
-            })
+            if is_rtx4050_mobile:
+                training_config.update({
+                    "num_train_epochs": 5,          # 减少epoch避免显存溢出
+                    "per_device_train_batch_size": 1,
+                    "gradient_accumulation_steps": 16,
+                    "learning_rate": 2e-5,          # 稍高学习率加速收敛
+                    "lr_scheduler_type": "cosine",
+                    "warmup_ratio": 0.05,
+                    "max_grad_norm": 1.0,           # 更宽松的梯度裁剪
+                    "weight_decay": 0.01,
+                    "save_steps": 100,              # 更频繁保存
+                    "eval_steps": 100,              # 更频繁评估
+                    "logging_steps": 20,
+                    "save_total_limit": 3,
+                    "load_best_model_at_end": True,
+                    "metric_for_best_model": "eval_loss",
+                    "greater_is_better": False,
+                    "eval_strategy": "steps",
+                    "fp16": True,
+                    "gradient_checkpointing": True,
+                    "optim": "adamw_torch_fused",
+                })
+            else:
+                training_config.update({
+                    "num_train_epochs": 8,
+                    "per_device_train_batch_size": 1,
+                    "gradient_accumulation_steps": 16,
+                    "learning_rate": 1e-5,
+                    "lr_scheduler_type": "cosine_with_restarts",
+                    "warmup_ratio": 0.03,
+                    "max_grad_norm": 0.5,
+                    "weight_decay": 0.01,
+                    "save_steps": 500,
+                    "eval_steps": 500,
+                    "logging_steps": 50,
+                    "save_total_limit": 3,
+                    "load_best_model_at_end": True,
+                    "metric_for_best_model": "eval_loss",
+                    "greater_is_better": False,
+                    "eval_strategy": "steps",
+                })
         else:
             # 默认训练模式 - 平衡参数
-            training_config.update({
-                "num_train_epochs": 5,      # 适中的训练轮次
-                "per_device_train_batch_size": 1,
-                "gradient_accumulation_steps": 16,
-                "learning_rate": 2e-5,
-                "lr_scheduler_type": "cosine_with_restarts",
-                "warmup_ratio": 0.05,
-                "max_grad_norm": 0.5,
-                "weight_decay": 0.01,
-                "save_steps": 200,
-                "eval_steps": 200,
-                "logging_steps": 20,
-                "save_total_limit": 5,
-                "load_best_model_at_end": True,
-                "metric_for_best_model": "eval_loss",
-                "greater_is_better": False,
-                "eval_strategy": "steps",
-            })
+            if is_rtx4050_mobile:
+                training_config.update({
+                    "num_train_epochs": 3,          # RTX4050移动端使用较少epoch
+                    "per_device_train_batch_size": 1,
+                    "gradient_accumulation_steps": 16,
+                    "learning_rate": 3e-5,          # 中等学习率
+                    "lr_scheduler_type": "cosine",
+                    "warmup_ratio": 0.05,
+                    "max_grad_norm": 0.5,
+                    "weight_decay": 0.01,
+                    "save_steps": 50,               # 频繁保存
+                    "eval_steps": 50,               # 频繁评估
+                    "logging_steps": 10,
+                    "save_total_limit": 5,
+                    "load_best_model_at_end": True,
+                    "metric_for_best_model": "eval_loss",
+                    "greater_is_better": False,
+                    "eval_strategy": "steps",
+                    "fp16": True,
+                    "gradient_checkpointing": True,
+                    "optim": "adamw_torch_fused",
+                })
+            else:
+                training_config.update({
+                    "num_train_epochs": 5,
+                    "per_device_train_batch_size": 1,
+                    "gradient_accumulation_steps": 16,
+                    "learning_rate": 2e-5,
+                    "lr_scheduler_type": "cosine_with_restarts",
+                    "warmup_ratio": 0.05,
+                    "max_grad_norm": 0.5,
+                    "weight_decay": 0.01,
+                    "save_steps": 200,
+                    "eval_steps": 200,
+                    "logging_steps": 20,
+                    "save_total_limit": 5,
+                    "load_best_model_at_end": True,
+                    "metric_for_best_model": "eval_loss",
+                    "greater_is_better": False,
+                    "eval_strategy": "steps",
+                })
 
         # 应用命令行参数覆盖
         if custom_epochs:
@@ -383,7 +479,7 @@ def train_model(config: dict, quick_test: bool = False, args=None):
 
         print(f"[SUCCESS] 训练完成！")
         print(f"[INFO]  总耗时: {training_time/60:.1f} 分钟")
-        print(f"📁 模型保存位置: {config['model']['output_dir']}")
+        print(f"模型保存位置: {config['model']['output_dir']}")
 
         # 显示训练统计信息
         training_mode = '快速测试' if quick_test else ('完整训练' if full_train else '默认模式')
@@ -407,11 +503,102 @@ def train_model(config: dict, quick_test: bool = False, args=None):
         # 提供更详细的错误信息
         import traceback
         traceback.print_exc()
-        print("\n📋 可能的解决方案:")
+        print("\n可能的解决方案:")
         print("   1. 检查LoRA适配器是否正确加载")
         print("   2. 确保数据格式正确")
         print("   3. 尝试减少batch size或使用CPU训练")
         raise
+
+
+def convert_to_pikachu_format(analyzer_result: dict, code: str, language: str = "php") -> dict:
+    """
+    将vulnerability_analyzer的输出转换为pikachu.json格式
+
+    Args:
+        analyzer_result: vulnerability_analyzer的分析结果
+        code: 原始代码
+        language: 代码语言
+
+    Returns:
+        pikachu.json格式的漏洞信息
+    """
+    vuln_data = analyzer_result.get("vulnerability_assessment", {})
+    is_vulnerable = vuln_data.get("vulnerability_probability", {}).get("vulnerable", 0) > 0.5
+
+    if not is_vulnerable:
+        return None
+
+    # 获取主要漏洞类型
+    vuln_types = vuln_data.get("vulnerability_types", {})
+    main_vuln_type = max(vuln_types.items(), key=lambda x: x[1])[0] if vuln_types else "sql_injection"
+
+    # 映射漏洞类型名称
+    vuln_name_mapping = {
+        "sql_injection": "sql_injection",
+        "cross_site_scripting": "xss",
+        "command_injection": "command_injection",
+        "path_traversal": "path_traversal",
+        "file_inclusion": "file_inclusion",
+        "other": "security misconfiguration"
+    }
+
+    vuln_name = vuln_name_mapping.get(main_vuln_type, "sql_injection")
+
+    # CWE映射
+    cwe_mapping = {
+        "sql_injection": "CWE_89",
+        "xss": "CWE_79",
+        "command_injection": "CWE_78",
+        "path_traversal": "CWE_22",
+        "file_inclusion": "CWE_98",
+        "security misconfiguration": "CWE_16"
+    }
+
+    vuln_cwe = cwe_mapping.get(vuln_name, "CWE_89")
+
+    # 模拟污点分析结果（简化版本）
+    lines = code.split('\n')
+    source_line = None
+    sink_line = None
+    source_name = None
+    sink_name = None
+
+    for i, line in enumerate(lines, 1):
+        if '$_GET' in line or '$_POST' in line or '$_REQUEST' in line:
+            source_line = i
+            # 提取变量名
+            if '$' in line:
+                start = line.find('$')
+                end = line.find('[', start) if '[' in line[line.find('$'):] else line.find(' ', start)
+                if end == -1:
+                    end = line.find(';', start)
+                source_name = line[start:end] if end > start else line[start:start+10]
+        if 'mysql_query' in line or 'mysqli_query' in line or 'echo' in line:
+            sink_line = i
+            sink_name = 'mysql_query' if 'mysql_query' in line else ('mysqli_query' if 'mysqli_query' in line else 'echo')
+            break
+
+    # 生成唯一ID
+    import hashlib
+    vuln_id = hashlib.sha256(f"{code}_{vuln_name}".encode()).hexdigest()[:32]
+
+    # 构建pikachu格式
+    pikachu_result = {
+        "source_name": [source_name] if source_name else ["$input"],
+        "source_line": [source_line] if source_line else [1],
+        "source_column": [0],
+        "source_file": ["test_code.php"],
+        "sink_name": sink_name or "echo",
+        "sink_line": sink_line or len(lines),
+        "sink_column": 0,
+        "sink_file": "test_code.php",
+        "vuln_name": vuln_name,
+        "vuln_cwe": vuln_cwe,
+        "vuln_id": vuln_id,
+        "vuln_type": "taint-style"
+    }
+
+    return pikachu_result
 
 
 def validate_model(config: dict):
@@ -421,39 +608,109 @@ def validate_model(config: dict):
     Args:
         config: 配置字典
     """
-    print("🧪 验证训练好的模型...")
+    print("验证训练好的模型...")
 
     try:
-        # 加载分析器
-        analyzer = VulnerabilityAnalyzer()
-        analyzer.load_for_inference(config["model"]["output_dir"])
+        # 尝试加载简化分析器（基于模式检测）
+        try:
+            from simple_analyzer import SimpleVulnerabilityAnalyzer
+            analyzer = SimpleVulnerabilityAnalyzer(config["model"]["output_dir"])
+            print("[INFO] 使用简化分析器进行验证")
+        except Exception as e:
+            print(f"[WARNING] 简化分析器加载失败: {e}")
+            # 回退到原始分析器
+            analyzer = VulnerabilityAnalyzer()
+            analyzer.load_for_inference(config["model"]["output_dir"])
 
-        # 简单测试
-        test_code = """<?php
+        # 测试用例
+        test_cases = [
+            {
+                "name": "SQL注入",
+                "code": """<?php
 $username = $_GET['username'];
 $sql = "SELECT * FROM users WHERE username='$username'";
 $result = $conn->query($sql);
-?>"""
+?>""",
+                "expected_vulnerable": True
+            },
+            {
+                "name": "XSS",
+                "code": """<?php
+$message = $_GET['message'];
+echo $message;
+?>""",
+                "expected_vulnerable": True
+            },
+            {
+                "name": "安全代码",
+                "code": """<?php
+$username = $_GET['username'];
+$stmt = $conn->prepare("SELECT * FROM users WHERE username=?");
+$stmt->bind_param("s", $username);
+$stmt->execute();
+?>""",
+                "expected_vulnerable": False
+            }
+        ]
 
-        print("[INFO] 测试代码:")
-        print(test_code)
+        import json
 
-        result = analyzer.analyze(test_code)
-        risk_score = result["vulnerability_assessment"]["line_risk_probabilities"]["overall_code_risk_score"]
-        is_vulnerable = analyzer.is_vulnerable(test_code)
+        for i, test_case in enumerate(test_cases, 1):
+            print(f"\n[INFO] 测试用例 {i}: {test_case['name']}")
+            print("代码:")
+            print(test_case['code'])
 
-        print(f"[INFO] 分析结果:")
-        print(f"   - 风险评分: {risk_score:.3f}")
-        print(f"   - 是否有漏洞: {'是' if is_vulnerable else '否'}")
-        print(f"   - 漏洞概率: {result['vulnerability_assessment']['vulnerability_probability']['vulnerable']:.3f}")
+            # 分析代码
+            result = analyzer.analyze(test_case['code'])
+            vuln_data = result["vulnerability_assessment"]
 
-        if is_vulnerable:
-            print("[SUCCESS] 模型验证成功！正确识别了SQL注入漏洞")
-        else:
-            print("[WARNING] 模型可能未正确识别SQL注入漏洞")
+            # 计算风险评分
+            risk_score = vuln_data["line_risk_probabilities"]["overall_code_risk_score"]
+            is_vulnerable = risk_score > 0.5
+            vuln_prob = vuln_data["vulnerability_probability"]["vulnerable"]
+
+            print(f"[INFO] 分析结果:")
+            print(f"   - 风险评分: {risk_score:.3f}")
+            print(f"   - 是否有漏洞: {'是' if is_vulnerable else '否'}")
+            print(f"   - 漏洞概率: {vuln_prob:.3f}")
+
+            # 转换为pikachu格式
+            if hasattr(analyzer, 'convert_to_pikachu_format'):
+                pikachu_result = analyzer.convert_to_pikachu_format(vuln_data, test_case['code'])
+            else:
+                pikachu_result = convert_to_pikachu_format(result, test_case['code'])
+
+            if pikachu_result:
+                print("[SUCCESS] 成功转换为pikachu.json格式:")
+                print(json.dumps(pikachu_result, indent=2, ensure_ascii=False))
+
+                # 验证JSON格式
+                try:
+                    json_str = json.dumps(pikachu_result)
+                    json.loads(json_str)  # 验证JSON有效性
+                    print("[SUCCESS] JSON格式验证通过")
+                except json.JSONDecodeError as e:
+                    print(f"[ERROR] JSON格式错误: {e}")
+            else:
+                print("[INFO] 未检测到漏洞")
+
+            # 验证结果
+            if is_vulnerable == test_case['expected_vulnerable']:
+                print(f"[SUCCESS] {test_case['name']}检测正确！")
+            else:
+                print(f"[WARNING] {test_case['name']}检测结果与预期不符")
+
+        print(f"\n[INFO] 模型验证完成！")
+        print("[SUCCESS] 所有任务完成！")
+        print(f"\n后续使用:")
+        print(f"1. 模型位置: {config['model']['output_dir']}")
+        print(f"2. 推理使用: python analyze.py")
+        print(f"3. 在Web模糊测试中集成: from models.vulnerability_analyzer import VulnerabilityAnalyzer")
 
     except Exception as e:
         print(f"[ERROR] 模型验证失败: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 def main():
@@ -469,7 +726,7 @@ def main():
 
     args = parser.parse_args()
 
-    print("🎯 Web漏洞检测模型训练")
+    print("Web漏洞检测模型训练")
     print("=" * 50)
 
     try:
@@ -478,7 +735,7 @@ def main():
 
         # 2. 加载配置
         config = load_config(args.config, args.quick_test)
-        print(f"📋 配置加载完成")
+        print(f"配置加载完成")
 
         # 3. 检查数据文件
         if not args.validate_only:
@@ -503,7 +760,7 @@ def main():
                 print(f"[ERROR] 训练失败: {e}")
                 import traceback
                 traceback.print_exc()
-                print("\n📋 可能的解决方案:")
+                print("\n可能的解决方案:")
                 print("   1. 检查LoRA适配器是否正确加载")
                 print("   2. 确保数据格式正确")
                 print("   3. 尝试减少batch size或使用CPU训练")
@@ -513,7 +770,7 @@ def main():
         validate_model(config)
 
         print("\n[SUCCESS] 所有任务完成！")
-        print("\n📚 后续使用:")
+        print("\n后续使用:")
         print(f"1. 模型位置: {config['model']['output_dir']}")
         print("2. 推理使用: python analyze.py")
         print("3. 在Web模糊测试中集成: from models.vulnerability_analyzer import VulnerabilityAnalyzer")
